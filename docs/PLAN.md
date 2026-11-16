@@ -6,7 +6,7 @@ This is the approved design. It is updated as milestones are completed.
 
 | # | Milestone | Status |
 |---|---|---|
-| 0 | Project skeleton, Docker Compose, CI, database roles | Built and committed. CI has not run yet (waiting for the GitHub connection). |
+| 0 | Project skeleton, Docker Compose, CI, database roles | Done. CI green on all three jobs. |
 | 1 | Sellers, isolation, webhook, language, couriers | Not started |
 | 2 | Orders, state machine, transition log, lists | Not started |
 | 3 | Ledger | Not started |
@@ -310,7 +310,8 @@ from the ledger, never stored.
   the application role lookup access only.
 - CI has three jobs: lint and type check, tests against PostgreSQL 18 as the
   restricted role, and a Compose start with a health check.
-- Verified locally: tests, ruff, mypy, migrations and the running server
-  against PostgreSQL 16. The Docker image build and the Compose start could
-  not be run in the build environment (no access to image registries), so the
-  CI Compose job is their first real run.
+- Verified in CI on 2026-11-16: lint and types, 11 tests against PostgreSQL
+  18.7 as the restricted role, and the Compose stack starting and answering
+  `/healthz`. The Docker image and Compose start are verified only in CI,
+  because the build environment has no access to image registries.
+- Commits use GitHub's no-reply address as author.
