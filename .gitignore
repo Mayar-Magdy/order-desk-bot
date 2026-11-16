@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+htmlcov/
+
+# Local configuration and secrets
+.env
+
+# Compiled translations (built from .po files)
+*.mo
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store

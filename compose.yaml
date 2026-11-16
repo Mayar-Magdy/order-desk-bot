@@ -1,0 +1,58 @@
+# Starts the whole project with:  docker compose up --build
+#
+# The default passwords are for local development only. For any real
+# deployment, copy .env.example to .env and set your own values.
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres-dev-only}
+      ORDERDESK_OWNER_PASSWORD: ${ORDERDESK_OWNER_PASSWORD:-owner-dev-only}
+      ORDERDESK_APP_PASSWORD: ${ORDERDESK_APP_PASSWORD:-app-dev-only}
+      # orderdesk_test is used when you run the test suite from your machine.
+      ORDERDESK_DATABASES: ${ORDERDESK_DATABASES:-orderdesk orderdesk_test}
+    volumes:
+      # PostgreSQL 18 images keep data under /var/lib/postgresql (not .../data).
+      - pgdata:/var/lib/postgresql
+      - ./docker/postgres/init-roles.sh:/docker-entrypoint-initdb.d/10-init-roles.sh:ro
+    ports:
+      - "127.0.0.1:${ORDERDESK_DB_PORT:-5432}:5432"
+    healthcheck:
+      # Checked over TCP on purpose: while the image is still running its
+      # first-time setup, PostgreSQL only listens on a Unix socket.
+      test: ["CMD-SHELL", "pg_isready --host 127.0.0.1 --username postgres --dbname orderdesk"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    build: .
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      ORDERDESK_MIGRATIONS_DATABASE_URL: postgresql+psycopg://orderdesk_owner:${ORDERDESK_OWNER_PASSWORD:-owner-dev-only}@db:5432/orderdesk
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build: .
+    environment:
+      ORDERDESK_DATABASE_URL: postgresql+psycopg://orderdesk_app:${ORDERDESK_APP_PASSWORD:-app-dev-only}@db:5432/orderdesk
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:${ORDERDESK_API_PORT:-8000}:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  pgdata:
